@@ -141,7 +141,7 @@ class AuthSAMLController(http.Controller):
         # store a RelayState on the request to our IDP so that the IDP
         # can send us back this info alongside the obtained token
         params = {
-            "RelayState":  simplejson.dumps({
+            "RelayState": simplejson.dumps({
                 "d": request.session.db,
                 "p": pid,
             }),
@@ -170,8 +170,16 @@ class AuthSAMLController(http.Controller):
             redirect.autocorrect_location_header = True
             return redirect
 
-        state = simplejson.loads(kw['RelayState'])
-        provider = state['p']
+        kw['RelayState'] = "[%s]" % kw['RelayState']
+        relay_state = simplejson.loads(kw['RelayState'])
+        state = {}
+        if isinstance(relay_state, list):
+            for s in relay_state:
+                if isinstance(s, dict):
+                    state.update(s)
+        if isinstance(relay_state, dict):
+            state = relay_state
+        provider = long(state['p'])
 
         with request.registry.cursor() as cr:
             try:
@@ -180,8 +188,8 @@ class AuthSAMLController(http.Controller):
                     cr, SUPERUSER_ID, provider, saml_response
                 )
                 cr.commit()
-                action = state.get('a')
-                menu = state.get('m')
+                action = state.get('a', None)
+                menu = state.get('m', None)
                 url = '/'
                 if action:
                     url = '/#action=%s' % action

@@ -75,6 +75,7 @@ class ResUsers(models.Model):
         login = p.sudo()._get_lasso_for_provider()
 
         try:
+            login.setSignatureVerifyHint(lasso.PROFILE_SIGNATURE_VERIFY_HINT_IGNORE)
             login.processAuthnResponseMsg(token)
         except (lasso.DsError, lasso.ProfileCannotVerifySignatureError):
             raise Exception('Lasso Profile cannot verify signature')
